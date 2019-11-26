@@ -1,4 +1,4 @@
-require './utils'
+require './util/noise_utils.rb'
 
 Pixel = Struct.new(:r, :g, :b)
 class P5
@@ -7,8 +7,8 @@ class P5
     @encode = "ppm"
     @width  = 512 
     @height = 288
-    @color  = [255,255,255]
-    @alpha  = 1
+    @color  = [0,0,0]
+    @alpha  = 0 
     @isFill = true
     @linewidth   = 1
     @markerpoint = 1
@@ -19,11 +19,17 @@ class P5
   def height
     @height
   end
-  def color(arr)
+  def color
     @color
+  end
+  def linewidth
+    @linewidth
   end
   def fill(cr,cg,cb)
     @color = [cr,cg,cb]
+  end
+  def strokeWeight(width)
+    @linewidth = width
   end
   def background(w, h)
     @image = Array.new(h) do
@@ -32,22 +38,28 @@ class P5
     @width = w
     @height= h
   end
-  def pset(x, y, r=0, g=@color[0], b=@color[1], a=@color[2])
+  def save()
+    system("rm -f t.png")
+    open("t.ppm", "wb") do |f|
+      f.puts("P6\n300 200\n255")
+      @image.each do |a|
+        a.each do |p| f.write(p.to_a.pack("ccc")) end
+      end
+    end
+    system("convert t.ppm t.png")
+    system("rm t.ppm")
+  end
+  def pset(x, y)
     if x < 0 || x >= 300 || y < 0 || y >= 200 then return end
-    @image[y][x].r = (@image[y][x].r * a + r * (1.0 - a)).to_i
-    @image[y][x].g = (@image[y][x].g * a + g * (1.0 - a)).to_i
-    @image[y][x].b = (@image[y][x].b * a + b * (1.0 - a)).to_i
+    @image[y][x].r = (@image[y][x].r*@alpha+@color[0]*(1.0-@alpha)).to_i
+    @image[y][x].g = (@image[y][x].r*@alpha+@color[1]*(1.0-@alpha)).to_i
+    @image[y][x].b = (@image[y][x].b*@alpha+@color[2]*(1.0-@alpha)).to_i
   end
   def random(top)
     random = Random.new
     val = random.rand(0..top)
     val = val.to_i
     return val
-  end
-  def line(x1, y1, x2, y2)
-    if @isFill==True
-      fillline(x1,y1,x2,y2, @linewidth, @color[0], @color[1], @color[2], @alpha)
-    end
   end
   def ellipse(x, y, rx, ry)
     j0 = (y-ry).to_i; j1 = (y+ry).to_i
@@ -60,15 +72,39 @@ class P5
       end
     end
   end
-  def save()
-    open("t.ppm", "wb") do |f|
-      f.puts("P6\n300 200\n255")
-      @image.each do |a|
-        a.each do |p| f.write(p.to_a.pack("ccc")) end
+
+  def fillconvex(ax, ay)
+    xmax = ax.max.to_i; xmin = ax.min.to_i
+    ymax = ay.max.to_i; ymin = ay.min.to_i
+    ymin.step(ymax) do |j|
+      xmin.step(xmax) do |i|
+       if isinside(i, j, ax, ay)
+         if block_given? then yield(i,j) else pset(i,j) end
+       end
       end
     end
-    system("convert t.ppm t.png")
-    system("rm t.ppm")
+  end
+  def isinside(x, y, ax, ay)
+    (ax.length-1).times do |i|
+      if oprod(ax[i+1]-ax[i],ay[i+1]-ay[i],x-ax[i],y-ay[i])<0
+        return false
+      end
+    end
+    return true
+  end  
+  def line(x0, y0, x1, y1)
+    dx = y1-y0; dy = x0-x1; n = 0.5*@linewidth / Math.sqrt(dx**2 + dy**2)
+    dx = dx * n; dy = dy * n
+    if block_given?
+      fillconvex([x0-dx, x0+dx, x1+dx, x1-dx, x0-dx],
+                 [y0-dy, y0+dy, y1+dy, y1-dy, y0-dy]) do |x,y| yield(x,y) end
+    else
+      fillconvex([x0-dx, x0+dx, x1+dx, x1-dx, x0-dx],
+                 [y0-dy, y0+dy, y1+dy, y1-dy, y0-dy]) 
+    end
+  end
+  def oprod(a, b, c, d)
+    return a*d - b*c;
   end
 end
 
