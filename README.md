@@ -78,7 +78,7 @@ rand.rb
 line.rb
 
 <p align="left">
-<img src="https://github.com/YouseiTakei/p5rb/blob/master/images/rand.png", width="512">
+<img src="https://github.com/YouseiTakei/p5rb/blob/master/images/line.png", width="512">
 </p>
 
 graph.rb
