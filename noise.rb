@@ -1,7 +1,7 @@
 require './p5'
 
 p5 = P5.new()
-p5.background(512, 288)
+p5.size(512*4, 288*4)
 
 num_x = 16
 num_y = 9

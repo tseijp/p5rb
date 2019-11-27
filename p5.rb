@@ -25,23 +25,38 @@ class P5
   def linewidth
     @linewidth
   end
-  def fill(cr,cg,cb)
-    @color = [cr,cg,cb]
+  def fill(cr=@color[0],cg=@color[1],cb=@color[2],ca=@alpha)
+    if cr.instance_of?(Array)
+      @color = [cr[0],cr[1],cr[2]]
+      if cr.length>3
+        @alpha = cr[3]
+      end
+    else
+      @color = [cr,cg,cb]
+      @alpha = ca
+    end
   end
   def strokeWeight(width)
     @linewidth = width
   end
-  def background(w, h)
+  def size(w, h)
     @image = Array.new(h) do
-      Array.new(w) do Pixel.new(255-@color[0],255-@color[1],255-@color[2]) end
+      Array.new(w) do Pixel.new(@color[0],@color[1],@color[2]) end
     end
     @width = w
     @height= h
   end
+  def flip()
+    image = Marshal.load(Marshal.dump( @image ))
+    for i in 0..image.length-1
+      @image[i] = image[image.length - i -1]
+    end
+  end
   def save()
     system("rm -f t.png")
+    flip()
     open("t.ppm", "wb") do |f|
-      f.puts("P6\n300 200\n255")
+      f.puts("P6\n"+@width.to_s+" "+@height.to_s+"\n255")
       @image.each do |a|
         a.each do |p| f.write(p.to_a.pack("ccc")) end
       end
@@ -50,7 +65,7 @@ class P5
     system("rm t.ppm")
   end
   def pset(x, y)
-    if x < 0 || x >= 300 || y < 0 || y >= 200 then return end
+    if x < 0 || x >= @width || y < 0 || y >= @height then return end
     @image[y][x].r = (@image[y][x].r*@alpha+@color[0]*(1.0-@alpha)).to_i
     @image[y][x].g = (@image[y][x].r*@alpha+@color[1]*(1.0-@alpha)).to_i
     @image[y][x].b = (@image[y][x].b*@alpha+@color[2]*(1.0-@alpha)).to_i
