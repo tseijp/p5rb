@@ -10,6 +10,9 @@
 /test/version_tmp/
 /tmp/
 
+examples
+packages
+
 .nfs*
 
 # Used by dotenv library to load environment variables.
@@ -50,4 +53,3 @@ build-iPhoneSimulator/
 
 # unless supporting rvm < 1.11.0 or doing something fancy, ignore this:
 .rvmrc
-
